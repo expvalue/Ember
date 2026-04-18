@@ -62,18 +62,13 @@ def open_arduino():
         print(f"[firebot] Could not open {ARDUINO_PORT}: {e}", flush=True)
         return None
 
-arduino   = open_arduino()
-_last_cmd = None
+arduino = open_arduino()
 
 def send_cmd(cmd: str):
-    global _last_cmd
+    """Send every frame as a heartbeat — Arduino watchdog auto-stops if we crash."""
     if arduino is None or cmd not in ("F", "S"):
         return
-    if cmd == _last_cmd:
-        return
     arduino.write(cmd.encode())
-    _last_cmd = cmd
-    print(f"[firebot] >>> Sent '{cmd}' to Arduino", flush=True)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -198,7 +193,7 @@ try:
             draw_pulsing_border(frame, intensity)
             draw_alert_banner(frame, f"FIRE DETECTED  |  conf {best_fire_conf:.2f}", intensity)
 
-        # ── MOTOR DECISION (simple: fire seen = stop) ────────────────────
+        # ── MOTOR DECISION (sent every frame as heartbeat) ───────────────
         if fire_detected:
             send_cmd("S")
             cv2.putText(frame, "MOTOR: STOP (fire detected!)", (10,fh-16),
